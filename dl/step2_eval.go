@@ -76,20 +76,49 @@ func rep(line string, env Environment) (string, error) {
 	return replPrint(val), nil
 }
 
+func getTwoMalInts(args []types.MalType) (types.MalInt, types.MalInt, error) {
+	if len(args) != 2 {
+		return 0, 0, errors.New("expected 2 args")
+	}
+	a, b := args[0], args[1]
+
+	if _, ok := a.(types.MalInt); !ok {
+		return 0, 0, errors.New(printer.Print(a) + " is not an int")
+	}
+	if _, ok := b.(types.MalInt); !ok {
+		return 0, 0, errors.New(printer.Print(b) + " is not an int")
+	}
+	return a.(types.MalInt), b.(types.MalInt), nil
+}
+
 var defaultEnv = Environment{
 	"+": types.MalFunction(func(args ...types.MalType) (types.MalType, error) {
-		if len(args) != 2 {
-			return nil, errors.New("expected 2 args")
+		a, b, err := getTwoMalInts(args)
+		if err != nil {
+			return nil, err
 		}
-		a, b := args[0], args[1]
-
-		if _, ok := a.(types.MalInt); !ok {
-			return nil, errors.New(printer.Print(a) + " is not an int")
+		return a + b, nil
+	}),
+	"-": types.MalFunction(func(args ...types.MalType) (types.MalType, error) {
+		a, b, err := getTwoMalInts(args)
+		if err != nil {
+			return nil, err
 		}
-		if _, ok := b.(types.MalInt); !ok {
-			return nil, errors.New(printer.Print(b) + " is not an int")
+		return a - b, nil
+	}),
+	"*": types.MalFunction(func(args ...types.MalType) (types.MalType, error) {
+		a, b, err := getTwoMalInts(args)
+		if err != nil {
+			return nil, err
 		}
-		return a.(types.MalInt) + b.(types.MalInt), nil
+		return a * b, nil
+	}),
+	"/": types.MalFunction(func(args ...types.MalType) (types.MalType, error) {
+		a, b, err := getTwoMalInts(args)
+		if err != nil {
+			return nil, err
+		}
+		return a / b, nil
 	}),
 }
 
