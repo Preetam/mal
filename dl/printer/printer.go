@@ -1,6 +1,7 @@
 package printer
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -22,5 +23,5 @@ func Print(val types.MalType) string {
 	case nil:
 		return "nil"
 	}
-	panic("unknown type")
+	panic("unknown type " + fmt.Sprintf("%T", val))
 }
