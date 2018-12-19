@@ -19,3 +19,7 @@ func (s MalSymbol) IsMalType() {}
 type MalFunction func(args ...MalType) (MalType, error)
 
 func (f MalFunction) IsMalType() {}
+
+type MalBool bool
+
+func (b MalBool) IsMalType() {}

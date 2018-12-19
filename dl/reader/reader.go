@@ -63,6 +63,14 @@ func (r *Reader) readAtom() (types.MalType, error) {
 	if n, err := strconv.ParseInt(token, 10, 64); err == nil {
 		return types.MalInt(n), nil
 	}
+	switch token {
+	case "nil":
+		return types.MalType(nil), nil
+	case "true":
+		return types.MalBool(true), nil
+	case "false":
+		return types.MalBool(false), nil
+	}
 	return types.MalSymbol(token), nil
 }
 
