@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/Preetam/mal/dl/core"
 	"github.com/Preetam/mal/dl/environment"
 	"github.com/Preetam/mal/dl/printer"
 	"github.com/Preetam/mal/dl/reader"
@@ -43,7 +44,7 @@ func replEval(val types.MalType, env *environment.Env) (types.MalType, error) {
 				return nil, errors.New("expected symbol argument")
 			}
 		case "let*":
-			newEnv := environment.New(env)
+			newEnv, _ := environment.New(env, nil, nil)
 			if len(list) < 3 {
 				return nil, errors.New("missing let* arguments")
 			}
@@ -66,6 +67,37 @@ func replEval(val types.MalType, env *environment.Env) (types.MalType, error) {
 				newEnv.Set(keySymbol, evaluated)
 			}
 			return replEval(list[2], newEnv)
+		case "do":
+			var returnVal types.MalType
+			var err error
+			for _, elem := range list[1:] {
+				returnVal, err = evalAST(elem, env)
+				if err != nil {
+					return nil, err
+				}
+			}
+			return returnVal, nil
+		case "if":
+			result, err := replEval(list[1], env)
+			if err != nil {
+				return nil, err
+			}
+			boolResult, ok := result.(types.MalBool)
+			if result == nil || (ok && !bool(boolResult)) {
+				return replEval(list[2], env)
+			}
+			if len(list) < 4 {
+				return nil, nil
+			}
+			return replEval(list[3], env)
+		case "fn*":
+			return types.MalFunction(func(args ...types.MalType) (types.MalType, error) {
+				newEnv, err := environment.New(env, list[1], types.MalList(args))
+				if err != nil {
+					return nil, err
+				}
+				return replEval(list[2], newEnv)
+			}), nil
 		}
 	}
 
@@ -76,7 +108,8 @@ func replEval(val types.MalType, env *environment.Env) (types.MalType, error) {
 	evaluatedList := evaluated.(types.MalList)
 	f, ok := evaluatedList[0].(types.MalFunction)
 	if !ok {
-		return nil, errors.New("first argument is not a function")
+		return evaluatedList, nil
+		//return nil, errors.New("first argument is not a function")
 	}
 	return f(evaluatedList[1:]...)
 }
@@ -119,51 +152,11 @@ func rep(line string, env *environment.Env) (string, error) {
 	return replPrint(val), nil
 }
 
-func getTwoMalInts(args []types.MalType) (types.MalInt, types.MalInt, error) {
-	if len(args) != 2 {
-		return 0, 0, errors.New("expected 2 args")
-	}
-	a, b := args[0], args[1]
-
-	if _, ok := a.(types.MalInt); !ok {
-		return 0, 0, errors.New(printer.Print(a) + " is not an int")
-	}
-	if _, ok := b.(types.MalInt); !ok {
-		return 0, 0, errors.New(printer.Print(b) + " is not an int")
-	}
-	return a.(types.MalInt), b.(types.MalInt), nil
-}
-
 func defaultEnv() *environment.Env {
-	env := environment.New(nil)
-	env.Set("+", types.MalFunction(func(args ...types.MalType) (types.MalType, error) {
-		a, b, err := getTwoMalInts(args)
-		if err != nil {
-			return nil, err
-		}
-		return a + b, nil
-	}))
-	env.Set("-", types.MalFunction(func(args ...types.MalType) (types.MalType, error) {
-		a, b, err := getTwoMalInts(args)
-		if err != nil {
-			return nil, err
-		}
-		return a - b, nil
-	}))
-	env.Set("*", types.MalFunction(func(args ...types.MalType) (types.MalType, error) {
-		a, b, err := getTwoMalInts(args)
-		if err != nil {
-			return nil, err
-		}
-		return a * b, nil
-	}))
-	env.Set("/", types.MalFunction(func(args ...types.MalType) (types.MalType, error) {
-		a, b, err := getTwoMalInts(args)
-		if err != nil {
-			return nil, err
-		}
-		return a / b, nil
-	}))
+	env, _ := environment.New(nil, nil, nil)
+	for name, f := range core.NS {
+		env.Set(types.MalSymbol(name), f)
+	}
 	return env
 }
 

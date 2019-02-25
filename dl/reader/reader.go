@@ -25,7 +25,7 @@ func (r *Reader) ReadForm() (types.MalType, error) {
 		return nil, errors.New("EOF")
 	}
 	switch token[0] {
-	case '(':
+	case '(', '[':
 		// Read list
 		r.Next()
 		val, err := r.readList()
@@ -33,6 +33,9 @@ func (r *Reader) ReadForm() (types.MalType, error) {
 			return nil, err
 		}
 		return val, nil
+	case '"':
+		token := r.Next()
+		return types.MalString(token), nil
 	default:
 		return r.readAtom()
 	}
@@ -43,7 +46,7 @@ func (r *Reader) readList() (types.MalType, error) {
 	for {
 		token := r.Peek()
 		switch token {
-		case ")":
+		case ")", "]":
 			r.Next()
 			return list, nil
 		case "":

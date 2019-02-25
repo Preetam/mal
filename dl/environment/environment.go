@@ -21,20 +21,22 @@ func New(outer *Env, binds, exprs types.MalType) (*Env, error) {
 		values: map[types.MalSymbol]types.MalType{},
 	}
 
-	bindsList, ok := binds.(types.MalList)
-	if !ok {
-		return nil, errors.New("binds is not a list")
-	}
-	exprsList, ok := exprs.(types.MalList)
-	if !ok {
-		return nil, errors.New("exprs is not a list")
-	}
-	if len(bindsList) != len(exprsList) {
-		return nil, errors.New("binds list length does not equal exprs list length")
-	}
+	if binds != nil {
+		bindsList, ok := binds.(types.MalList)
+		if !ok {
+			return nil, errors.New("binds is not a list")
+		}
+		exprsList, ok := exprs.(types.MalList)
+		if !ok {
+			return nil, errors.New("exprs is not a list")
+		}
+		if len(bindsList) != len(exprsList) {
+			return nil, errors.New("binds list length does not equal exprs list length")
+		}
 
-	for i, bind := range bindsList {
-
+		for i, bind := range bindsList {
+			env.Set(bind.(types.MalSymbol), exprsList[i])
+		}
 	}
 
 	return env, nil

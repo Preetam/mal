@@ -29,6 +29,8 @@ func Print(val types.MalType) string {
 		return "nil"
 	case types.MalFunction:
 		return "#<function>"
+	case types.MalString:
+		return string(malVal)
 	}
 	panic("unknown type " + fmt.Sprintf("%T", val))
 }
